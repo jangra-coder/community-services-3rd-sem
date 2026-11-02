@@ -141,7 +141,7 @@ npm run build
 NODE_ENV=production JWT_SECRET=... DATABASE_URL=... CLIENT_URL=https://your-domain SMTP_HOST=... npm start
 ```
 
-Or use the included `Dockerfile` (`docker build -t eventpass .`) / `docker compose --profile app up`. Free-tier friendly combinations: Render or Railway for the app, Neon or Supabase for PostgreSQL, Brevo or a Gmail app-password for SMTP. Remember to set `TRUST_PROXY=1` behind a platform load balancer.
+Or use the included `Dockerfile` (`docker build -t eventpass .`) / `JWT_SECRET=$(openssl rand -hex 48) docker compose --profile app up` — the app refuses to start in production with a missing, short or placeholder `JWT_SECRET`. Free-tier friendly combinations: Render or Railway for the app, Neon or Supabase for PostgreSQL, Brevo or a Gmail app-password for SMTP. Remember to set `TRUST_PROXY=1` behind a platform load balancer.
 
 ## Course information
 

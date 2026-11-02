@@ -33,9 +33,21 @@ function required(name, value) {
   return value;
 }
 
+// Placeholder secrets that appear in this repository and must never sign real tokens.
+const PLACEHOLDER_SECRETS = new Set([
+  'dev-only-insecure-secret',
+  'change-me-in-production',
+  'please-change-this-secret-before-going-live',
+  'test-secret-not-for-production',
+]);
+const MIN_SECRET_LENGTH = 32;
+
 const jwtSecret = env.JWT_SECRET || 'dev-only-insecure-secret';
-if (isProduction && (!env.JWT_SECRET || env.JWT_SECRET === 'change-me-in-production')) {
-  throw new Error('JWT_SECRET must be set to a strong random value in production');
+if (isProduction && (PLACEHOLDER_SECRETS.has(jwtSecret) || jwtSecret.length < MIN_SECRET_LENGTH)) {
+  throw new Error(
+    `JWT_SECRET must be a random value of at least ${MIN_SECRET_LENGTH} characters in production ` +
+      '(generate one with: openssl rand -hex 48)',
+  );
 }
 
 const clientDist = path.resolve(serverRoot, '..', 'client', 'dist');
