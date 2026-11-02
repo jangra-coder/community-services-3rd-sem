@@ -25,7 +25,7 @@ The repository contains a [Render Blueprint](../render.yaml) that creates the we
 
 - The web service sleeps after 15 minutes without traffic; the first request afterwards takes ~1 minute. Open the site a few minutes before an event starts.
 - **Render's free PostgreSQL database is deleted 30 days after creation.** For anything that must survive longer, use a free [Neon](https://neon.tech) database instead:
-  1. Create a Neon project and copy its connection string (it ends in `?sslmode=require`).
+  1. Create a Neon project and copy its connection string; change the ending to `?sslmode=verify-full` (Neon uses publicly trusted certificates, so the connection is fully verified).
   2. In Render → your service → **Environment**, set `DATABASE_URL` to that string.
   3. Delete the `databases:` block and the `fromDatabase` lines from `render.yaml` so Render stops managing a database, then redeploy.
 
@@ -57,6 +57,17 @@ events.example.edu {
     reverse_proxy localhost:4000
 }
 ```
+
+## Database connections and TLS
+
+TLS for the database is controlled by the `DATABASE_URL` query string; the app never disables certificate checks on its own.
+
+| Database | What to use |
+| --- | --- |
+| Render or Railway database reached through its **internal** URL (what the blueprint / `${{Postgres.DATABASE_URL}}` gives you) | No `sslmode` – traffic stays on the provider's private network. |
+| Neon, or any provider with a publicly trusted certificate | `?sslmode=verify-full` |
+| Supabase (own certificate authority) | Download their CA file and use `?sslmode=verify-full&sslrootcert=/path/to/prod-ca.crt` |
+| Provider with a self-signed certificate (e.g. Railway's public proxy) | Prefer the internal URL; otherwise `?sslmode=no-verify` as a conscious choice. |
 
 ## Email (SMTP)
 
