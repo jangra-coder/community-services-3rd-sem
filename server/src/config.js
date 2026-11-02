@@ -53,6 +53,34 @@ if (isProduction && (PLACEHOLDER_SECRETS.has(jwtSecret) || jwtSecret.length < MI
 const clientDist = path.resolve(serverRoot, '..', 'client', 'dist');
 
 /**
+ * Express `trust proxy` setting. Accepts a hop count ("1"), true/false, or a
+ * preset such as "loopback" / "uniquelocal" / an IP list. "true" maps to one
+ * hop (the platform's load balancer) rather than Express's fully permissive
+ * `true`, which would let clients spoof their IP for rate limiting.
+ */
+function parseTrustProxy(value) {
+  if (value === undefined || value === '') return 0;
+  const v = String(value).trim();
+  const lower = v.toLowerCase();
+  if (['true', 'yes', 'on'].includes(lower)) return 1;
+  if (['false', 'no', 'off', '0'].includes(lower)) return false;
+  if (/^\d+$/.test(v)) return Number(v);
+  return v;
+}
+
+/** IANA time zone used when the server formats dates (emails, scanner messages). */
+function parseTimeZone(value) {
+  const zone = value || 'Asia/Kolkata';
+  try {
+    new Intl.DateTimeFormat('en', { timeZone: zone });
+    return zone;
+  } catch {
+    console.warn(`APP_TIMEZONE "${zone}" is not a valid IANA time zone, falling back to UTC`);
+    return 'UTC';
+  }
+}
+
+/**
  * Public URL of the web app. Explicit CLIENT_URL wins; otherwise fall back to
  * the URL hosting platforms inject, so a single-server deployment needs no
  * manual configuration (QR codes link to this URL).
@@ -76,7 +104,8 @@ export const config = {
   appName: env.APP_NAME || 'EventPass',
   organizerSignupCode: env.ORGANIZER_SIGNUP_CODE || '',
   autoMigrate: bool(env.AUTO_MIGRATE, true),
-  trustProxy: Number(env.TRUST_PROXY) || 0,
+  trustProxy: parseTrustProxy(env.TRUST_PROXY),
+  timeZone: parseTimeZone(env.APP_TIMEZONE),
   serveClient: bool(env.SERVE_CLIENT, isProduction && fs.existsSync(clientDist)),
   clientDist,
   smtp: {

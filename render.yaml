@@ -35,6 +35,9 @@ services:
           name: eventpass-db
           property: connectionString
       # CLIENT_URL is derived from RENDER_EXTERNAL_URL automatically.
+      # IANA time zone used in ticket emails (defaults to Asia/Kolkata when blank).
+      - key: APP_TIMEZONE
+        sync: false
       - key: ORGANIZER_SIGNUP_CODE
         sync: false
       - key: SMTP_HOST

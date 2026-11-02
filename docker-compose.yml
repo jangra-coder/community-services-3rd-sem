@@ -50,6 +50,9 @@ services:
       SMTP_HOST: mail
       SMTP_PORT: 1025
       SERVE_CLIENT: "true"
+      # The app is expected to sit behind an HTTPS reverse proxy (Caddy, Nginx...)
+      TRUST_PROXY: "1"
+      APP_TIMEZONE: ${APP_TIMEZONE:-Asia/Kolkata}
     ports:
       - "4000:4000"
 

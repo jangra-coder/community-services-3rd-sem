@@ -32,6 +32,7 @@ export default function Scanner() {
 
   const scannerRef = useRef(null);
   const lastScan = useRef({ code: null, at: 0 });
+  const inFlight = useRef(false);
   const resultTimer = useRef(null);
   const inputRef = useRef(null);
 
@@ -64,12 +65,22 @@ export default function Scanner() {
   const submitCode = useCallback(
     async (raw, { force = false } = {}) => {
       const code = normalizeTicketCode(raw);
+      const key = code || raw.trim();
       const now = Date.now();
       // The camera reports the same QR many times per second; ignore repeats
       // unless the organizer deliberately typed the code and pressed the button.
-      if (!force && code && lastScan.current.code === code && now - lastScan.current.at < DEDUPE_MS) return;
-      lastScan.current = { code, at: now };
+      if (!force && lastScan.current.code === key && now - lastScan.current.at < DEDUPE_MS) return;
+      if (inFlight.current) return; // one check at a time
+      lastScan.current = { code: key, at: now };
 
+      // Not an EventPass ticket (poster QR, payment QR...): answer locally, no API call.
+      if (!code) {
+        feedback('error');
+        showResult({ result: 'invalid', message: 'That QR code is not an EventPass ticket.' });
+        return;
+      }
+
+      inFlight.current = true;
       setChecking(true);
       try {
         const data = await api.events.checkin(id, raw);
@@ -82,6 +93,7 @@ export default function Scanner() {
         const result = err.body?.result || 'error';
         showResult({ result, message: err.message, attendee: err.body?.attendee });
       } finally {
+        inFlight.current = false;
         setChecking(false);
       }
     },
@@ -223,7 +235,7 @@ export default function Scanner() {
             className="font-mono uppercase tracking-widest"
             maxLength={11}
           />
-          <Button type="submit" disabled={manual.length < 10 || checking}>
+          <Button type="submit" disabled={!normalizeTicketCode(manual) || checking}>
             Check in
           </Button>
         </div>

@@ -112,7 +112,8 @@ All settings are environment variables read by `server/src/config.js` (see [`ser
 | `ORGANIZER_SIGNUP_CODE` | empty | When set, creating an organizer account requires this code. |
 | `AUTO_MIGRATE` | `true` | Run migrations on start-up |
 | `SERVE_CLIENT` | auto | Serve `client/dist` from Express (on by default in production) |
-| `TRUST_PROXY` | `0` | Set to `1` behind a reverse proxy so rate limiting sees real IPs |
+| `TRUST_PROXY` | `0` | Set to `1` behind a reverse proxy / load balancer so rate limiting sees real client IPs (accepts a hop count, `true`/`false` or `loopback`) |
+| `APP_TIMEZONE` | `Asia/Kolkata` | IANA time zone used for dates in ticket emails and scanner messages |
 | `VITE_API_URL` (client) | empty | Only when the frontend is hosted on a different domain than the API |
 
 ## Testing

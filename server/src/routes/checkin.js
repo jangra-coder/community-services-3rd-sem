@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { query } from '../db/pool.js';
+import { config } from '../config.js';
 import { validate } from '../middleware/validate.js';
 import { requireAuth } from '../middleware/auth.js';
 import { loadOwnedEvent } from '../services/events.js';
@@ -92,6 +93,7 @@ checkinRouter.post('/:id/checkin', requireAuth, validate(checkinSchema), async (
     message: `Already checked in at ${new Date(ticket.checked_in_at).toLocaleTimeString('en-IN', {
       hour: '2-digit',
       minute: '2-digit',
+      timeZone: config.timeZone,
     })}.`,
     attendee: presentAttendee(ticket),
   });

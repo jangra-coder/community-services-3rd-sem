@@ -50,7 +50,7 @@ cd community-services-3rd-sem
 JWT_SECRET=$(openssl rand -hex 48) CLIENT_URL=https://events.example.edu docker compose --profile app up -d --build
 ```
 
-This starts PostgreSQL, Mailpit and the app on port 4000. Put an HTTPS reverse proxy in front (for example [Caddy](https://caddyserver.com/), which issues certificates automatically):
+This starts PostgreSQL, Mailpit and the app on port 4000 (the compose file sets `TRUST_PROXY=1`, so rate limiting works correctly behind the proxy below, and `APP_TIMEZONE=Asia/Kolkata` for email dates — override either with an environment variable). Put an HTTPS reverse proxy in front (for example [Caddy](https://caddyserver.com/), which issues certificates automatically):
 
 ```
 events.example.edu {

@@ -12,12 +12,22 @@ export const EVENT_SELECT = `
 
 export const EVENT_FROM = 'FROM events e JOIN users u ON u.id = e.organizer_id';
 
+const DEFAULT_DURATION_MS = 6 * 60 * 60 * 1000;
+
+/**
+ * An event is over once its end time has passed – or, when no end time was
+ * given, six hours after it started. Used by both the API responses and the
+ * registration endpoint so the UI and the server always agree.
+ */
+export function eventHasEnded(row, now = Date.now()) {
+  const ends = row.ends_at ? new Date(row.ends_at).getTime() : new Date(row.starts_at).getTime() + DEFAULT_DURATION_MS;
+  return ends < now;
+}
+
 /** Convert a DB row to the JSON shape returned by the API. */
 export function presentEvent(row, { forOrganizer = false } = {}) {
   const spotsLeft = row.capacity === null ? null : Math.max(0, row.capacity - row.registration_count);
-  const now = Date.now();
-  const ends = row.ends_at ? new Date(row.ends_at).getTime() : null;
-  const hasEnded = ends !== null ? ends < now : new Date(row.starts_at).getTime() + 6 * 3600 * 1000 < now;
+  const hasEnded = eventHasEnded(row);
 
   const event = {
     id: row.id,

@@ -15,7 +15,6 @@ export default function EventDashboard() {
   const [error, setError] = useState(null);
   const [updatedAt, setUpdatedAt] = useState(null);
   const [copied, setCopied] = useState(false);
-  const [, tick] = useState(0);
 
   const loadStats = useCallback(async () => {
     try {
@@ -31,11 +30,7 @@ export default function EventDashboard() {
   useEffect(() => {
     loadStats();
     const poll = setInterval(loadStats, POLL_MS);
-    const clock = setInterval(() => tick((n) => n + 1), 1000);
-    return () => {
-      clearInterval(poll);
-      clearInterval(clock);
-    };
+    return () => clearInterval(poll);
   }, [loadStats]);
 
   const copyLink = async () => {
@@ -90,7 +85,7 @@ export default function EventDashboard() {
 
       <div className="mb-3 flex items-center gap-2 text-xs text-slate-500">
         <span className="live-dot inline-block h-2 w-2 rounded-full bg-emerald-500" />
-        Live · updated {updatedAt ? formatRelative(updatedAt) : '…'}
+        Live · updated <UpdatedAgo at={updatedAt} />
         {error && <span className="text-red-600">· {error}</span>}
       </div>
 
@@ -130,6 +125,16 @@ export default function EventDashboard() {
       <RegistrationsTable eventId={id} eventTitle={event.title} refreshKey={totals.registrations + totals.checkedIn * 1000} onChanged={loadStats} />
     </div>
   );
+}
+
+/** "just now" / "N min ago" label with its own ticker, so the dashboard itself does not re-render every second. */
+function UpdatedAgo({ at }) {
+  const [, tick] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => tick((n) => n + 1), 1000);
+    return () => clearInterval(timer);
+  }, []);
+  return <>{at ? formatRelative(at) : '…'}</>;
 }
 
 function Timeline({ buckets }) {
