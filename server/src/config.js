@@ -1,0 +1,121 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+export const serverRoot = path.resolve(__dirname, '..');
+
+// Load server/.env if present. Variables already set in the environment win,
+// so tests and deployment platforms can override anything in the file.
+const envFile = path.join(serverRoot, '.env');
+if (fs.existsSync(envFile) && process.env.NODE_ENV !== 'test') {
+  try {
+    process.loadEnvFile(envFile);
+  } catch (err) {
+    console.warn(`Could not load ${envFile}: ${err.message}`);
+  }
+}
+
+const env = process.env;
+const nodeEnv = env.NODE_ENV || 'development';
+const isProduction = nodeEnv === 'production';
+const isTest = nodeEnv === 'test';
+
+function bool(value, fallback) {
+  if (value === undefined || value === '') return fallback;
+  return ['1', 'true', 'yes', 'on'].includes(String(value).toLowerCase());
+}
+
+function required(name, value) {
+  if (!value) {
+    throw new Error(`Missing required environment variable ${name}`);
+  }
+  return value;
+}
+
+// Placeholder secrets that appear in this repository and must never sign real tokens.
+const PLACEHOLDER_SECRETS = new Set([
+  'dev-only-insecure-secret',
+  'change-me-in-production',
+  'please-change-this-secret-before-going-live',
+  'test-secret-not-for-production',
+]);
+const MIN_SECRET_LENGTH = 32;
+
+const jwtSecret = env.JWT_SECRET || 'dev-only-insecure-secret';
+if (isProduction && (PLACEHOLDER_SECRETS.has(jwtSecret) || jwtSecret.length < MIN_SECRET_LENGTH)) {
+  throw new Error(
+    `JWT_SECRET must be a random value of at least ${MIN_SECRET_LENGTH} characters in production ` +
+      '(generate one with: openssl rand -hex 48)',
+  );
+}
+
+const clientDist = path.resolve(serverRoot, '..', 'client', 'dist');
+
+/**
+ * Express `trust proxy` setting. Accepts a hop count ("1"), true/false, or a
+ * preset such as "loopback" / "uniquelocal" / an IP list. "true" maps to one
+ * hop (the platform's load balancer) rather than Express's fully permissive
+ * `true`, which would let clients spoof their IP for rate limiting.
+ */
+function parseTrustProxy(value) {
+  if (value === undefined || value === '') return 0;
+  const v = String(value).trim();
+  const lower = v.toLowerCase();
+  if (['true', 'yes', 'on'].includes(lower)) return 1;
+  if (['false', 'no', 'off', '0'].includes(lower)) return false;
+  if (/^\d+$/.test(v)) return Number(v);
+  return v;
+}
+
+/** IANA time zone used when the server formats dates (emails, scanner messages). */
+function parseTimeZone(value) {
+  const zone = value || 'Asia/Kolkata';
+  try {
+    new Intl.DateTimeFormat('en', { timeZone: zone });
+    return zone;
+  } catch {
+    console.warn(`APP_TIMEZONE "${zone}" is not a valid IANA time zone, falling back to UTC`);
+    return 'UTC';
+  }
+}
+
+/**
+ * Public URL of the web app. Explicit CLIENT_URL wins; otherwise fall back to
+ * the URL hosting platforms inject, so a single-server deployment needs no
+ * manual configuration (QR codes link to this URL).
+ */
+function publicUrl() {
+  if (env.CLIENT_URL) return env.CLIENT_URL;
+  if (env.RENDER_EXTERNAL_URL) return env.RENDER_EXTERNAL_URL; // Render
+  if (env.RAILWAY_PUBLIC_DOMAIN) return `https://${env.RAILWAY_PUBLIC_DOMAIN}`; // Railway
+  return 'http://localhost:5173';
+}
+
+export const config = {
+  nodeEnv,
+  isProduction,
+  isTest,
+  port: Number(env.PORT) || 4000,
+  databaseUrl: required('DATABASE_URL', env.DATABASE_URL),
+  jwtSecret,
+  jwtExpiresIn: env.JWT_EXPIRES_IN || '7d',
+  clientUrl: publicUrl().replace(/\/+$/, ''),
+  appName: env.APP_NAME || 'EventPass',
+  organizerSignupCode: env.ORGANIZER_SIGNUP_CODE || '',
+  autoMigrate: bool(env.AUTO_MIGRATE, true),
+  trustProxy: parseTrustProxy(env.TRUST_PROXY),
+  timeZone: parseTimeZone(env.APP_TIMEZONE),
+  serveClient: bool(env.SERVE_CLIENT, isProduction && fs.existsSync(clientDist)),
+  clientDist,
+  smtp: {
+    host: env.SMTP_HOST || '',
+    port: Number(env.SMTP_PORT) || 587,
+    secure: bool(env.SMTP_SECURE, false),
+    user: env.SMTP_USER || '',
+    pass: env.SMTP_PASS || '',
+    from: env.MAIL_FROM || `${env.APP_NAME || 'EventPass'} <no-reply@eventpass.local>`,
+  },
+};
+
+export default config;
