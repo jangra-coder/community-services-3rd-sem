@@ -40,6 +40,18 @@ if (isProduction && (!env.JWT_SECRET || env.JWT_SECRET === 'change-me-in-product
 
 const clientDist = path.resolve(serverRoot, '..', 'client', 'dist');
 
+/**
+ * Public URL of the web app. Explicit CLIENT_URL wins; otherwise fall back to
+ * the URL hosting platforms inject, so a single-server deployment needs no
+ * manual configuration (QR codes link to this URL).
+ */
+function publicUrl() {
+  if (env.CLIENT_URL) return env.CLIENT_URL;
+  if (env.RENDER_EXTERNAL_URL) return env.RENDER_EXTERNAL_URL; // Render
+  if (env.RAILWAY_PUBLIC_DOMAIN) return `https://${env.RAILWAY_PUBLIC_DOMAIN}`; // Railway
+  return 'http://localhost:5173';
+}
+
 export const config = {
   nodeEnv,
   isProduction,
@@ -48,7 +60,7 @@ export const config = {
   databaseUrl: required('DATABASE_URL', env.DATABASE_URL),
   jwtSecret,
   jwtExpiresIn: env.JWT_EXPIRES_IN || '7d',
-  clientUrl: (env.CLIENT_URL || 'http://localhost:5173').replace(/\/+$/, ''),
+  clientUrl: publicUrl().replace(/\/+$/, ''),
   appName: env.APP_NAME || 'EventPass',
   organizerSignupCode: env.ORGANIZER_SIGNUP_CODE || '',
   autoMigrate: bool(env.AUTO_MIGRATE, true),
