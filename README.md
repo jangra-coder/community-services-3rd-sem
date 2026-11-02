@@ -104,7 +104,7 @@ All settings are environment variables read by `server/src/config.js` (see [`ser
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `DATABASE_URL` | – (required) | PostgreSQL connection string. Append `?sslmode=require` for hosted databases. |
+| `DATABASE_URL` | – (required) | PostgreSQL connection string. For hosted databases append `?sslmode=verify-full` (certificates are verified; add `&sslrootcert=/path/ca.crt` for providers with their own CA). |
 | `JWT_SECRET` | dev-only value | Signs organizer tokens. **Must** be set to a long random string in production. |
 | `CLIENT_URL` | `http://localhost:5173` | Public URL of the web app; used for CORS and the link inside QR codes. |
 | `PORT` | `4000` | API port |

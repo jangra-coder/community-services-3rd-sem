@@ -3,11 +3,14 @@ import { config } from '../config.js';
 
 const { Pool } = pg;
 
+// TLS is controlled entirely by the connection string, e.g.
+//   ?sslmode=verify-full                      hosted DB with a publicly trusted certificate (Neon, ...)
+//   ?sslmode=verify-full&sslrootcert=/path    provider with its own CA (Supabase, ...)
+//   ?sslmode=no-verify                        explicit opt-out of certificate checks (not recommended)
+// `pg` verifies certificates by default; never pass rejectUnauthorized:false here.
 export const pool = new Pool({
   connectionString: config.databaseUrl,
   max: config.isTest ? 4 : 10,
-  // Hosted PostgreSQL (Neon, Supabase, Render, Railway...) requires TLS.
-  ssl: /sslmode=require/.test(config.databaseUrl) ? { rejectUnauthorized: false } : undefined,
 });
 
 pool.on('error', (err) => {
