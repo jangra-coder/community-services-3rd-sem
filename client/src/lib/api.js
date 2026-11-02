@@ -3,7 +3,8 @@ const TOKEN_KEY = 'eventpass.token';
 
 export class ApiError extends Error {
   constructor(status, body) {
-    super(body?.error || `Request failed (${status})`);
+    // Validation/auth errors carry `error`; check-in outcomes carry `message`.
+    super(body?.error || body?.message || `Request failed (${status})`);
     this.name = 'ApiError';
     this.status = status;
     this.code = body?.code;
