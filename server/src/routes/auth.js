@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
@@ -26,10 +27,20 @@ function presentUser(row) {
   return { id: row.id, name: row.name, email: row.email, role: row.role, createdAt: row.created_at };
 }
 
+// Compared against when the email is unknown, so login takes the same time
+// whether or not an account exists (prevents timing-based user enumeration).
+const DUMMY_HASH = bcrypt.hashSync('not-a-real-password', 10);
+
+function safeEqual(a, b) {
+  const x = Buffer.from(String(a ?? ''));
+  const y = Buffer.from(String(b ?? ''));
+  return x.length === y.length && crypto.timingSafeEqual(x, y);
+}
+
 authRouter.post('/signup', authLimiter, validate(signupSchema), async (req, res) => {
   const { name, email, password, signupCode } = req.body;
 
-  if (config.organizerSignupCode && signupCode !== config.organizerSignupCode) {
+  if (config.organizerSignupCode && !safeEqual(signupCode, config.organizerSignupCode)) {
     throw forbidden('Invalid organizer sign-up code', { code: 'BAD_SIGNUP_CODE' });
   }
 
@@ -55,8 +66,9 @@ authRouter.post('/login', authLimiter, validate(loginSchema), async (req, res) =
     [email],
   );
   const row = rows[0];
-  const ok = row ? await bcrypt.compare(password, row.password_hash) : false;
-  if (!ok) throw unauthorized('Incorrect email or password', { code: 'BAD_CREDENTIALS' });
+  // Always run the (slow) hash comparison so unknown emails are not faster to reject.
+  const matches = await bcrypt.compare(password, row ? row.password_hash : DUMMY_HASH);
+  if (!row || !matches) throw unauthorized('Incorrect email or password', { code: 'BAD_CREDENTIALS' });
 
   const user = presentUser(row);
   res.json({ token: signToken(user), user });

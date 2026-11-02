@@ -76,6 +76,19 @@ describe('check-in', () => {
     expect(cancelled.body.result).toBe('cancelled');
   });
 
+  it('never reveals another organizer’s attendee when their ticket is scanned by mistake', async () => {
+    const { code } = await setup(); // ticket belongs to organizer 1's event
+    const other = await createOrganizer();
+    const otherEvent = await createEvent(other.token, { title: 'Other Club Meetup' });
+
+    const res = await checkin(otherEvent, other.token, code);
+    expect(res.status).toBe(409);
+    expect(res.body.result).toBe('wrong_event');
+    expect(res.body.attendee).toBeUndefined();
+    expect(res.body.message).not.toContain('Blood Donation Camp');
+    expect(JSON.stringify(res.body)).not.toContain('asha@example.com');
+  });
+
   it('only lets the event organizer check people in', async () => {
     const { event, code } = await setup();
     const stranger = await createOrganizer();

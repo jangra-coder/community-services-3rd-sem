@@ -77,7 +77,7 @@ export default function EventDetail() {
           Register for this event
         </h2>
         {event.canRegister ? (
-          <RegistrationForm event={event} onRegistered={(count) => setEvent({ ...event, registrationCount: count })} />
+          <RegistrationForm event={event} />
         ) : (
           <Alert tone="warning" title="Registration is not available">
             {event.hasEnded
