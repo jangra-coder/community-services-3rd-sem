@@ -15,7 +15,7 @@ function readToken(req) {
   const [scheme, token] = header.split(' ');
   if (scheme?.toLowerCase() !== 'bearer' || !token) return null;
   try {
-    const payload = jwt.verify(token, config.jwtSecret);
+    const payload = jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'] });
     return { id: payload.sub, name: payload.name, email: payload.email, role: payload.role };
   } catch {
     return null;

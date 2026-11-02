@@ -59,7 +59,8 @@ checkinRouter.post('/:id/checkin', requireAuth, validate(checkinSchema), async (
 
   // Work out why the ticket was not accepted.
   const { rows } = await query(
-    `SELECT r.*, e.title AS event_title FROM registrations r JOIN events e ON e.id = r.event_id
+    `SELECT r.*, e.title AS event_title, e.organizer_id AS event_organizer_id
+       FROM registrations r JOIN events e ON e.id = r.event_id
       WHERE r.ticket_code = $1`,
     [code],
   );
@@ -68,10 +69,15 @@ checkinRouter.post('/:id/checkin', requireAuth, validate(checkinSchema), async (
     return res.status(404).json({ result: 'invalid', message: 'Ticket not found. Please check the code.' });
   }
   if (ticket.event_id !== event.id) {
+    // Only reveal who the ticket belongs to when the other event is also ours;
+    // another organizer's attendee data must never leak through the scanner.
+    const ours = ticket.event_organizer_id === req.user.id || req.user.role === 'admin';
     return res.status(409).json({
       result: 'wrong_event',
-      message: `This ticket is for "${ticket.event_title}", not this event.`,
-      attendee: presentAttendee(ticket),
+      message: ours
+        ? `This ticket is for "${ticket.event_title}", not this event.`
+        : 'This ticket belongs to a different event.',
+      ...(ours ? { attendee: presentAttendee(ticket) } : {}),
     });
   }
   if (ticket.status === 'cancelled') {

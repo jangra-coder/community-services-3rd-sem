@@ -14,6 +14,12 @@ import { generateTicketCode } from '../src/services/tickets.js';
 const DEMO_EMAIL = 'organizer@example.com';
 const DEMO_PASSWORD = 'Password123';
 
+// The demo account has a well-known password: never create it on a live site by accident.
+if (process.env.NODE_ENV === 'production' && !process.argv.includes('--force')) {
+  console.error('Refusing to seed demo data with NODE_ENV=production. Re-run with --force if you really mean it.');
+  process.exit(1);
+}
+
 const FIRST = ['Aarav', 'Diya', 'Ishaan', 'Kavya', 'Rohan', 'Sneha', 'Arjun', 'Meera', 'Vikram', 'Ananya',
   'Karan', 'Priya', 'Rahul', 'Nisha', 'Siddharth', 'Pooja', 'Aditya', 'Riya', 'Manish', 'Tanvi'];
 const LAST = ['Sharma', 'Verma', 'Patel', 'Reddy', 'Singh', 'Iyer', 'Nair', 'Gupta', 'Joshi', 'Mehta'];

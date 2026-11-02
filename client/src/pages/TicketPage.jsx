@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import { api } from '../lib/api.js';
 import TicketCard from '../components/TicketCard.jsx';
@@ -26,11 +26,12 @@ export default function TicketPage() {
 
   // Load on arrival (unless we just registered) and keep the status fresh
   // so the attendee sees "Checked in" as soon as they pass the entrance.
+  const hadInitial = useRef(Boolean(initial));
   useEffect(() => {
-    if (!initial) load();
+    if (!hadInitial.current) load();
     const timer = setInterval(load, 20000);
     return () => clearInterval(timer);
-  }, [load, initial]);
+  }, [load]);
 
   const share = async () => {
     const url = window.location.href;
