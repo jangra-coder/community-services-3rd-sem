@@ -127,6 +127,12 @@ The server tests default to `postgres://eventpass:eventpass@localhost:5432/event
 
 ## Deployment
 
+Fastest route – Render's free tier with the included [Blueprint](render.yaml) (creates the web service and a PostgreSQL database; works once this file is on the default branch):
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/jangra-coder/community-services-3rd-sem)
+
+Step-by-step instructions for Render, Railway and a self-hosted Docker server, plus free SMTP options, are in [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+
 The simplest production setup is one server process that serves both the API and the built client:
 
 ```bash
