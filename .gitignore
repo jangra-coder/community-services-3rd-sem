@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Environment files (keep the .example files)
+.env
+.env.*
+!.env.example
+
+# Build output
+client/dist/
+server/dist/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Test / coverage
+coverage/
+
+# Editor & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

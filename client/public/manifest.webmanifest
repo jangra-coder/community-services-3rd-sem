@@ -1,0 +1,12 @@
+{
+  "name": "EventPass",
+  "short_name": "EventPass",
+  "description": "Register for events in seconds and check in with a QR code.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4f46e5",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
