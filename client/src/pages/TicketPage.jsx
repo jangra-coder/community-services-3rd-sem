@@ -13,6 +13,8 @@ export default function TicketPage() {
   const [data, setData] = useState(initial);
   const [error, setError] = useState(null);
   const justRegistered = Boolean(initial?.justRegistered);
+  // The registration response carries the full email; later polls only have the masked one.
+  const [registeredEmail] = useState(initial?.ticket?.email ?? null);
 
   const load = useCallback(async () => {
     try {
@@ -64,7 +66,7 @@ export default function TicketPage() {
     <div className="mx-auto max-w-md animate-rise">
       {justRegistered && (
         <Alert tone="success" title="You're registered!" className="mb-5">
-          We've emailed this ticket to <strong>{data.ticket.email}</strong>. Save a screenshot too, just in case.
+          We've emailed this ticket to <strong>{registeredEmail || data.ticket.email}</strong>. Save a screenshot too, just in case.
         </Alert>
       )}
 

@@ -93,6 +93,16 @@ describe('attendee registration', () => {
     expect(endedRes.status).toBe(409);
     expect(endedRes.body.code).toBe('EVENT_ENDED');
 
+    // No end time: the event counts as over six hours after it started (same rule the UI uses)
+    const openEnded = await createEvent(token, { startsAt: inDays(0, -7), endsAt: null });
+    const openEndedRes = await registerAttendee(openEnded.id);
+    expect(openEndedRes.status).toBe(409);
+    expect(openEndedRes.body.code).toBe('EVENT_ENDED');
+    expect((await request(app).get(`/api/events/${openEnded.id}`)).body.event.hasEnded).toBe(true);
+
+    const stillRunning = await createEvent(token, { startsAt: inDays(0, -5), endsAt: null });
+    expect((await registerAttendee(stillRunning.id)).status).toBe(201);
+
     const draft = await createEvent(token, { isPublished: false });
     expect((await registerAttendee(draft.id)).status).toBe(404);
 

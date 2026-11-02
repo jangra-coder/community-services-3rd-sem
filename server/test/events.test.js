@@ -151,6 +151,20 @@ describe('events', () => {
     expect(lines[1]).toMatch(/^Asha Rao,asha@example\.com,,[A-Z2-9]{5}-[A-Z2-9]{5},registered,/);
   });
 
+  it('treats _ and % in the registration search literally', async () => {
+    const { token } = await createOrganizer();
+    const event = await createEvent(token);
+    await registerAttendee(event.id, { name: 'Underscore', email: 'a_b@example.com' });
+    await registerAttendee(event.id, { name: 'No underscore', email: 'axb@example.com' });
+
+    const search = (term) =>
+      request(app).get(`/api/events/${event.id}/registrations?search=${encodeURIComponent(term)}`).set(auth(token));
+
+    expect((await search('a_b')).body.registrations.map((r) => r.email)).toEqual(['a_b@example.com']);
+    expect((await search('%')).body.total).toBe(0);
+    expect((await search('axb')).body.total).toBe(1);
+  });
+
   it('lets the owner cancel a registration, freeing the seat', async () => {
     const { token } = await createOrganizer();
     const event = await createEvent(token, { capacity: 1 });

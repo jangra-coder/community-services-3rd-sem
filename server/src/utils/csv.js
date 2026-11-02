@@ -1,8 +1,9 @@
 function escapeCell(value) {
   if (value === null || value === undefined) return '';
   let text = value instanceof Date ? value.toISOString() : String(value);
-  // Prevent spreadsheet formula injection (=, +, -, @ at the start of a cell)
-  if (/^[=+\-@]/.test(text)) text = `'${text}`;
+  // Neutralise spreadsheet formulas (=SUM(), @cmd, +cmd|…, -cmd|…) while leaving
+  // ordinary values such as phone numbers ("+91 …") and negative numbers intact.
+  if (/^[=@\t\r]/.test(text) || /^[+-](?![\d\s(])/.test(text)) text = `'${text}`;
   if (/[",\r\n]/.test(text)) text = `"${text.replace(/"/g, '""')}"`;
   return text;
 }

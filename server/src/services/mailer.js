@@ -26,9 +26,11 @@ export function setTransport(custom) {
 }
 
 function formatDate(date) {
+  // Always format in the configured zone: inside Docker the server clock is UTC.
   return new Date(date).toLocaleString('en-IN', {
     dateStyle: 'full',
     timeStyle: 'short',
+    timeZone: config.timeZone,
   });
 }
 

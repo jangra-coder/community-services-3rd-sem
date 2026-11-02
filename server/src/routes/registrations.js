@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { query, withTransaction } from '../db/pool.js';
 import { validate } from '../middleware/validate.js';
 import { registrationLimiter } from '../middleware/rateLimit.js';
-import { findEvent, presentEvent } from '../services/events.js';
+import { eventHasEnded, findEvent, presentEvent } from '../services/events.js';
 import { sendTicketEmail } from '../services/mailer.js';
 import { generateTicketCode, normalizeTicketCode, ticketQrDataUrl, ticketUrl } from '../services/tickets.js';
 import { conflict, notFound } from '../utils/errors.js';
@@ -60,8 +60,7 @@ registrationsRouter.post('/:id/register', registrationLimiter, validate(register
     if (!event.registration_open) {
       throw conflict('Registration for this event is closed', { code: 'REGISTRATION_CLOSED' });
     }
-    const ended = event.ends_at ? new Date(event.ends_at) < new Date() : false;
-    if (ended) throw conflict('This event has already ended', { code: 'EVENT_ENDED' });
+    if (eventHasEnded(event)) throw conflict('This event has already ended', { code: 'EVENT_ENDED' });
 
     // Count in a separate statement *after* the lock is held: it runs with a
     // fresh snapshot, so it sees seats taken by transactions that just committed.

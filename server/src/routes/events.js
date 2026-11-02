@@ -220,9 +220,10 @@ function registrationFilters(eventId, q) {
     where.push(`status = $${params.length}`);
   }
   if (q.search) {
-    params.push(`%${q.search}%`);
+    // Escape LIKE wildcards so "a_b" or "50%" match literally.
+    params.push(`%${q.search.replace(/[\\%_]/g, '\\$&')}%`);
     const p = `$${params.length}`;
-    where.push(`(name ILIKE ${p} OR email ILIKE ${p} OR ticket_code ILIKE ${p})`);
+    where.push(`(name ILIKE ${p} ESCAPE '\\' OR email ILIKE ${p} ESCAPE '\\' OR ticket_code ILIKE ${p} ESCAPE '\\')`);
   }
   return { where: where.join(' AND '), params };
 }
